@@ -44,13 +44,13 @@ def current_user(token:str=Depends(oauth2_scheme), session:Session=Depends(get_s
         headers={"WWW-Authenticate": "Bearer"}
     )
     try:
-        pyload=jwt.decode(token, SECRET_KEY, algorithm=ALGORITHM)
+        pyload=jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user=pyload.get("sub")
         if not user:
             raise credential_error
     except JWTError:
         raise credential_error
-    user_data=session.exec(select(User).where(User.username==user))
+    user_data=session.exec(select(User).where(User.username==user)).first()
     if not user_data:
         raise credential_error
     return user_data
