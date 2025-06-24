@@ -13,6 +13,7 @@ class User(SQLModel,table=True):
     password:str=Field()
     transaction:List["Transaction"]=Relationship(back_populates="user")
     category:List["Transaction_Category"]=Relationship(back_populates="user")
+    saving:List["Savings"]=Relationship(back_populates="user")
 
 class Transaction_Category(SQLModel,table=True):
     id:int|None=Field(primary_key=True, index=True)
@@ -40,7 +41,17 @@ class Transaction(SQLModel, table=True):
     notes:int|None=Field(default=None)
 
 
+class Savings(SQLModel, table=True):
+    id:int|None=Field(primary_key=True, index=True)
+    user_id:int=Field(foreign_key="user.id")
+    user:Optional[User]=Relationship(back_populates="saving")
+    goal:str=Field(index=True)
+    add_amount:int
+    started_at:date=Field(default_factory=date.today)
+
 
 User.update_forward_refs()
 Transaction_Category.update_forward_refs()
 Transaction.update_forward_refs()
+
+
