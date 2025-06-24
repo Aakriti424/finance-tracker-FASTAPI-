@@ -4,8 +4,8 @@ from typing import Annotated
 from sqlmodel import Session, select
 from database import create_database
 from auth import get_session, hash_password, oauth2_scheme, verify_password,create_access_token, EXPIRE_DATE, current_user
-from schemas import User_Create, User_Read, Token, Transaction_Create, Transaction_Read, Category_Create, Category_Read
-from model import User, Transaction, Transaction_Category
+from schemas import User_Create, User_Read, Token, Transaction_Create, Transaction_Read, Category_Create, Category_Read, Savings_Create, Savings_Read,Savings_add_amount
+from model import User, Transaction, Transaction_Category, Savings
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -108,4 +108,35 @@ def delete_category(category_id:int=id,session:Session=Depends(get_session),user
     if category.user_id==user.id:
         session.delete(category)
         raise HTTPException(status_code=status.HTTP_202_ACCEPTED, detail="Successfully Deleted")
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorized")
+
+
+@app.post('/savings', response_model=Savings_Read, tags=["create savings"])
+def create_savings(input:Savings_Create, session:Session=Depends(get_session), user:User=Depends(current_user)):
+    savings_db=Savings(
+        user_id=user.id,
+        goal=input.goal,
+        add_amount=input.add_amount
+    )
+    session.add(savings_db)
+    session.commit()
+    session.refresh(savings_db)
+    return savings_db
+
+@app.post('/add amount/{id}', tags=["Add amount to the savings"])
+def add_amount(input:Savings_add_amount,savings_id:int=id, session:Session=Depends(get_session), user:User=Depends(current_user)):
+    saving=session.exec(select(Savings).where(Transaction.id==savings_id)).first()
+    if saving.user_id==user.id:
+        saving.add_amount=saving.add_amount+input.amount
+        saving_db=Savings(
+            user_id=user.id,
+            goal=saving.goal,
+            add_amount=saving.add_amount
+        )
+        saving_data=saving_db.model_dump(exclude_unset=True)
+        saving.sqlmodel_update(saving_data)
+        session.add(saving)
+        session.commit()
+        session.refresh(saving)
+        raise HTTPException(status_code=status.HTTP_202_ACCEPTED, detail=f"Price {input.amount} has been added to your savings. Total : {saving.add_amount}")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorized")
