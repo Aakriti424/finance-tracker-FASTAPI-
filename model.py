@@ -15,6 +15,7 @@ class User(SQLModel,table=True):
     category:List["Transaction_Category"]=Relationship(back_populates="user")
     saving:List["Savings"]=Relationship(back_populates="user")
 
+
 class Transaction_Category(SQLModel,table=True):
     id:int|None=Field(primary_key=True, index=True)
     category:str|None=Field(index=True, unique=True)
@@ -34,6 +35,7 @@ class Transaction(SQLModel, table=True):
     user:Optional[User]=Relationship(back_populates="transaction")
     title:str
     amount:int
+    created_at:date=Field(default_factory=date.today)
     type:Transaction_type=Field(default=Transaction_type.expense,index=True)
     transaction_category_id:Optional[int]=Field(foreign_key="transaction_category.id")
     trans_category:Optional[Transaction_Category]=Relationship(back_populates="transaction_link")
@@ -45,13 +47,15 @@ class Savings(SQLModel, table=True):
     id:int|None=Field(primary_key=True, index=True)
     user_id:int=Field(foreign_key="user.id")
     user:Optional[User]=Relationship(back_populates="saving")
-    goal:str=Field(index=True)
     add_amount:int
     started_at:date=Field(default_factory=date.today)
+    
+
 
 
 User.update_forward_refs()
 Transaction_Category.update_forward_refs()
 Transaction.update_forward_refs()
+Savings.update_forward_refs()
 
 
