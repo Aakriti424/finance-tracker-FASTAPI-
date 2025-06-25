@@ -38,16 +38,20 @@ class Category_Read(BaseModel):
     category:str
 
 class Savings_Create(BaseModel):
-    goal:str
     add_amount:int
 
 class Savings_Read(BaseModel):
     id:int
-    goal:str
     add_amount:int
 
 class Savings_add_amount(BaseModel):
     amount:int
+
+
+
+class History_filter(BaseModel):
+    time:date
+    
 
 class Token(BaseModel):
     access_token:str
