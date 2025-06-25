@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Financial Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+        }
+
+        .summary {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        table {
+            width: 60%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        td {
+            background-color: #fff;
+        }
+
+        .total {
+            font-weight: bold;
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <h1>Monthly Financial Report</h1>
+
+    <h2>Month: {{ month }}</h2>
+    <p><strong>User:</strong> {{ user }}</p>
+
+    <div class="summary">
+        <p><strong>Total Income:</strong> Rs. {{ income }}</p>
+        <p><strong>Total Expenses:</strong> Rs. {{ expense }}</p>
+        <p><strong>Total Savings:</strong> Rs. {{ savings }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Amount (Rs.)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Income</td>
+                <td>{{ income }}</td>
+            </tr>
+            <tr>
+                <td>Expense</td>
+                <td>{{ expense }}</td>
+            </tr>
+            <tr>
+                <td>Savings</td>
+                <td class="total">{{ savings }}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
