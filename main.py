@@ -2,19 +2,19 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from calendar import monthrange
 from datetime import date, datetime
 from sqlalchemy.exc import IntegrityError
-from typing import Annotated, List
+from typing import Annotated
 from sqlmodel import Session, select,func
 from database import create_database
 from auth import get_session, hash_password, oauth2_scheme, verify_password,create_access_token, EXPIRE_DATE, current_user
 from schemas import User_Create, User_Read, Token, Transaction_Create, Transaction_Read, Category_Create, Category_Read, Savings_Create, Savings_Read,Savings_add_amount, History_filter
 from model import User, Transaction, Transaction_Category, Savings
 from datetime import timedelta
+from collections import defaultdict
 from fastapi.security import OAuth2PasswordRequestForm
-import os
 from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 from fastapi.responses import FileResponse
-import io
+
 
 app=FastAPI()
 
@@ -184,6 +184,7 @@ def filter_saving_history(input:History_filter,session: Session = Depends(get_se
         "total": total
     }
 
+
 @app.get("/saving history",tags=["Savings"])
 def view_all_history(session:Session=Depends(get_session), user:User=Depends(current_user)):
     history=session.exec(select(Savings).where(Savings.user_id==user.id)).all()
@@ -200,41 +201,83 @@ def view_all_history(session:Session=Depends(get_session), user:User=Depends(cur
     }
 
 
-templates=Environment(loader=FileSystemLoader("templates"))
-
+templates = Environment(loader=FileSystemLoader("templates"))
 
 @app.post("/monthly report", tags=["Monthly Report"])
-def genereate_report(input:History_filter,session:Session=Depends(get_session), user:User=Depends(current_user)):
-    month=input.time.month
-    year=input.time.year
+def generate_report(input: History_filter, session: Session = Depends(get_session), user: User = Depends(current_user)):
+    month = input.time.month
+    year = input.time.year
 
-    start_date=date(year, month, 1)
-    end_day=monthrange(year, month)[1]
-    end_date=date(year, month, end_day)
-    
-    user_rn=session.get(User, user.id)
-    income=session.exec(select(func.sum(Transaction.amount)).where(Transaction.user_id==user.id)
-                        .where(Transaction.type=="Income")
-                        .where(Transaction.created_at>=start_date)
-                        .where(Transaction.created_at<=end_date)).one()
-    expense=session.exec(select(func.sum(Transaction.amount)).where(Transaction.user_id==user.id)
-                    .where(Transaction.type=="Expense")
-                    .where(Transaction.created_at>=start_date)
-                    .where(Transaction.created_at<=end_date)).one()
-    savings=session.exec(select(func.sum(Savings.add_amount)).where(Savings.user_id==user.id)
-                    .where(Savings.started_at>=start_date)
-                    .where(Savings.started_at<=end_date)).one()
-    data={
-        "user":user_rn.username,
-        "month":month,
-        "income":income,
-        "expense":expense,
-        "savings":savings
+    start_date = date(year, month, 1)
+    end_day = monthrange(year, month)[1]
+    end_date = date(year, month, end_day)
+
+    user_rn = session.get(User, user.id)
+
+    # Total Income
+    income_total = session.exec(
+        select(func.sum(Transaction.amount)).where(
+            Transaction.user_id == user.id,
+            Transaction.type == "Income",
+            Transaction.created_at >= start_date,
+            Transaction.created_at <= end_date
+        )
+    ).one() or 0
+
+    # Total Expense
+    expense_total = session.exec(
+        select(func.sum(Transaction.amount)).where(
+            Transaction.user_id == user.id,
+            Transaction.type == "Expense",
+            Transaction.created_at >= start_date,
+            Transaction.created_at <= end_date
+        )
+    ).one() or 0
+
+    # Total Savings
+    savings = session.exec(
+        select(func.sum(Savings.add_amount)).where(
+            Savings.user_id == user.id,
+            Savings.started_at >= start_date,
+            Savings.started_at <= end_date
+        )
+    ).one() or 0
+
+    # Fetch all transactions in the month
+    transactions = session.exec(
+        select(Transaction).where(
+            Transaction.user_id == user.id,
+            Transaction.created_at >= start_date,
+            Transaction.created_at <= end_date
+        )
+    ).all()
+
+    # Group transactions by date
+    daily_transactions = defaultdict(list)
+    for tx in transactions:
+        tx_date = tx.created_at.strftime("%Y-%m-%d")
+        daily_transactions[tx_date].append({
+            "type": tx.type,
+            "amount": tx.amount
+        })
+
+    # Prepare template data
+    context = {
+        "user": user_rn.username,
+        "month": input.time.strftime("%B %Y"),
+        "income": income_total,
+        "expense": expense_total,
+        "savings": savings,
+        "daily_transactions": dict(daily_transactions)
     }
-    
-    template=templates.get_template("report.html")
-    html_content=template.render(**data)
-    file_path="monthly_report.pdf"
+
+    # Render the template and generate PDF
+    template = templates.get_template("report.html")
+    html_content = template.render(**context)
+    file_path = "monthly_report.pdf"
     HTML(string=html_content).write_pdf(file_path)
 
     return FileResponse(path=file_path, media_type="application/pdf", filename="Monthly_Report.pdf")
+
+
+

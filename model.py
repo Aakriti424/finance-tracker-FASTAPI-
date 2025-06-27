@@ -50,6 +50,11 @@ class Savings(SQLModel, table=True):
     add_amount:int
     started_at:date=Field(default_factory=date.today)
     
+class fix_expenses(SQLModel,table=True):
+    id:int|None=Field(primary_key=True, index=True)
+    expenses_type:str=Field(index=True)
+    fixed_amount:int
+    created_date:date=Field(default_factory=date.today)
 
 
 

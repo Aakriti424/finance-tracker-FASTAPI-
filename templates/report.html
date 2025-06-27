@@ -10,24 +10,21 @@
             background-color: #f9f9f9;
         }
 
-        h1, h2 {
+        h1, h2, h3, h4 {
             color: #2c3e50;
         }
 
-        .summary {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-
         table {
-            width: 60%;
+            width: 100%;
             border-collapse: collapse;
-            margin-top: 30px;
+            margin-top: 10px;
+            margin-bottom: 30px;
         }
 
         th, td {
             border: 1px solid #ccc;
-            padding: 12px;
+            padding: 10px;
+            vertical-align: top;
             text-align: left;
         }
 
@@ -44,6 +41,20 @@
             font-weight: bold;
             color: #27ae60;
         }
+
+        .date-header {
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #ecf0f1;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .section-title {
+            margin-top: 30px;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -52,33 +63,63 @@
     <h2>Month: {{ month }}</h2>
     <p><strong>User:</strong> {{ user }}</p>
 
-    <div class="summary">
-        <p><strong>Total Income:</strong> Rs. {{ income }}</p>
-        <p><strong>Total Expenses:</strong> Rs. {{ expense }}</p>
-        <p><strong>Total Savings:</strong> Rs. {{ savings }}</p>
-    </div>
-
+    <h3 class="section-title">Summary</h3>
     <table>
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th>Amount (Rs.)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Income</td>
-                <td>{{ income }}</td>
-            </tr>
-            <tr>
-                <td>Expense</td>
-                <td>{{ expense }}</td>
-            </tr>
-            <tr>
-                <td>Savings</td>
-                <td class="total">{{ savings }}</td>
-            </tr>
-        </tbody>
+        <tr>
+            <th>Type</th>
+            <th>Amount (Rs.)</th>
+        </tr>
+        <tr>
+            <td>Income</td>
+            <td>{{ income }}</td>
+        </tr>
+        <tr>
+            <td>Expense</td>
+            <td>{{ expense }}</td>
+        </tr>
+        <tr>
+            <td>Savings</td>
+            <td class="total">{{ savings }}</td>
+        </tr>
     </table>
+
+    <h3 class="section-title">Daily Transactions</h3>
+    {% for date, transactions in daily_transactions.items() %}
+        <div class="date-header">{{ date }}</div>
+
+        {% set incomes = transactions | selectattr("type", "equalto", "Income") | list %}
+        {% if incomes %}
+            <h4>Income</h4>
+            <table>
+                <tr>
+                    <th>Income</th>
+                    <th>Amount (Rs.)</th>
+                </tr>
+                {% for tx in incomes %}
+                    <tr>
+                        <td>{{ tx.description }}</td>
+                        <td>{{ tx.amount }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+
+        {% set expenses = transactions | selectattr("type", "equalto", "Expense") | list %}
+        {% if expenses %}
+            <h4>Expense</h4>
+            <table>
+                <tr>
+                    <th>Expense</th>
+                    <th>Amount (Rs.)</th>
+                </tr>
+                {% for tx in expenses %}
+                    <tr>
+                        <td>{{ tx.type }}</td>
+                        <td>{{ tx.amount }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    {% endfor %}
 </body>
 </html>
